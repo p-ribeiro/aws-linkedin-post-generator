@@ -15,19 +15,19 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 @dataclass(frozen=True)
 class CanvasSpec:
-    width: int = 1080
-    height: int = 1350
+    width: int = 3240
+    height: int = 4050
 
 
 @dataclass(frozen=True)
 class SpacingSpec:
-    margin: int = 48
-    header_h: int = 120
-    title_y: int = 135
-    content_top: int = 185          # top of first frame
-    bottom_margin: int = 48
-    gap_between_frames: int = 24    # vertical gap between stacked frames
-    frame_padding: int = 12         # padding inside each frame around the screenshot
+    margin: int = 144
+    header_h: int = 360
+    title_y: int = 405
+    content_top: int = 555          # top of first frame
+    bottom_margin: int = 144
+    gap_between_frames: int = 72    # vertical gap between stacked frames
+    frame_padding: int = 36         # padding inside each frame around the screenshot
 
 
 @dataclass(frozen=True)
@@ -41,26 +41,26 @@ class StyleSpec:
     aws_orange: Tuple[int, int, int, int] = (255, 153, 0, 255)
 
     # Frame
-    frame_radius: int = 18
-    shadow_blur: int = 16
+    frame_radius: int = 54
+    shadow_blur: int = 48
     shadow_opacity: int = 80
-    shadow_offset_y: int = 4
+    shadow_offset_y: int = 12
 
     # Logo
-    logo_target_h: int = 72
+    logo_target_h: int = 216
 
 
 @dataclass(frozen=True)
 class TypographySpec:
-    badge_font_size: int = 38
-    title_font_size: int = 30
-    page_font_size: int = 22
-    label_font_size: int = 28
-    label_gap: int = 14            # space between label text and the frame below it
+    badge_font_size: int = 114
+    title_font_size: int = 90
+    page_font_size: int = 66
+    label_font_size: int = 84
+    label_gap: int = 42            # space between label text and the frame below it
 
-    badge_pad_x: int = 22
-    badge_pad_y: int = 12
-    badge_radius: int = 24
+    badge_pad_x: int = 66
+    badge_pad_y: int = 36
+    badge_radius: int = 72
 
 
 @dataclass(frozen=True)
@@ -138,24 +138,30 @@ def image_label(path: Path) -> str:
 
 
 def measure_screenshot(img_path: Path, avail_w: int, cfg: RenderConfig) -> ScreenSlot:
-    """Scale screenshot to fill available width; compute tight frame size."""
+    """Scale screenshot to fit available width and height; compute tight frame size."""
     img = Image.open(img_path)
     w, h = img.size
     pad = cfg.spacing.frame_padding
 
-    inner_w = avail_w - 2 * pad
-    scale = inner_w / w
-    scaled_w = inner_w
-    scaled_h = max(1, int(h * scale))
-
-    frame_w = avail_w
-    frame_h = scaled_h + 2 * pad
-
-    # Measure label height
+    # Measure label height first so we can account for it in the height budget
     label = image_label(img_path)
     label_font = load_font(cfg.typo.label_font_size, bold=True)
     tb = ImageDraw.Draw(Image.new("RGBA", (1, 1))).textbbox((0, 0), label.upper(), font=label_font)
     label_h = tb[3] - tb[1]
+
+    inner_w = avail_w - 2 * pad
+    avail_h = cfg.canvas.height - cfg.spacing.content_top - cfg.spacing.bottom_margin
+    max_inner_h = avail_h - label_h - cfg.typo.label_gap - 2 * pad
+
+    scale_w = inner_w / w
+    scale_h = (max_inner_h / h) if max_inner_h > 0 else scale_w
+    scale = min(scale_w, scale_h)
+
+    scaled_w = max(1, int(w * scale))
+    scaled_h = max(1, int(h * scale))
+
+    frame_w = scaled_w + 2 * pad
+    frame_h = scaled_h + 2 * pad
     total_h = label_h + cfg.typo.label_gap + frame_h
 
     return ScreenSlot(
@@ -333,9 +339,10 @@ def render_page(logo: Path, activity_title: str, page_num: int,
     avail_h = cfg.canvas.height - cfg.spacing.content_top - cfg.spacing.bottom_margin
     start_y = cfg.spacing.content_top + (avail_h - total_h) // 2
 
-    x = cfg.spacing.margin
+    avail_w = cfg.canvas.width - 2 * cfg.spacing.margin
     cur_y = start_y
     for slot in slots:
+        x = cfg.spacing.margin + (avail_w - slot.frame_w) // 2
         draw_framed_screenshot(canvas, slot, x, cur_y, cfg)
         cur_y += slot.total_h + gap
 
@@ -357,13 +364,13 @@ def main():
     ap.add_argument("--logo", required=True, help="Path to logo PNG")
 
     # Canvas
-    ap.add_argument("--width", type=int, default=1080)
-    ap.add_argument("--height", type=int, default=1350)
+    ap.add_argument("--width", type=int, default=3240)
+    ap.add_argument("--height", type=int, default=4050)
 
     # Spacing
-    ap.add_argument("--margin", type=int, default=48)
-    ap.add_argument("--frame_pad", type=int, default=12, help="Padding inside each frame")
-    ap.add_argument("--gap", type=int, default=24, help="Gap between stacked frames")
+    ap.add_argument("--margin", type=int, default=144)
+    ap.add_argument("--frame_pad", type=int, default=36, help="Padding inside each frame")
+    ap.add_argument("--gap", type=int, default=72, help="Gap between stacked frames")
 
     args = ap.parse_args()
 
@@ -412,7 +419,7 @@ def main():
         # Save all pages as a single PDF for this activity
         pdf_path = out_dir / f"{act_dir.name}.pdf"
         rendered[0].save(pdf_path, "PDF", save_all=True,
-                         append_images=rendered[1:], resolution=150)
+                         append_images=rendered[1:], resolution=300)
         print("Wrote", pdf_path)
 
 

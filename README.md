@@ -17,7 +17,7 @@ Isso instala o comando `linkedin-aws-post-generator` diretamente no seu terminal
 Organize suas capturas de tela assim antes de rodar:
 
 ```
-screens/
+pages/
 ├── Nome da Atividade 1/
 │   ├── 1.txt              ← (opcional) título do grupo 1
 │   ├── 1.1-descricao-da-tela.png
@@ -27,7 +27,7 @@ screens/
 └── Nome da Atividade 2/
     ├── 1.txt
     └── 1.1-tela.png
-out/          # PDFs e PNGs gerados aqui (criado automaticamente)
+result/       # PDFs e PNGs gerados aqui (criado automaticamente)
 logo.png      # Logo exibida no cabeçalho
 ```
 
@@ -65,23 +65,22 @@ Os arquivos devem seguir o padrão `GRUPO.ORDEM-descricao.png`:
 ## Uso
 
 ```bash
-linkedin-aws-post-generator \
-  --in_root screens \
-  --out_dir out \
-  --logo logo.png
+linkedin-aws-post-generator
+```
+
+As pastas `pages/` e `result/` e o arquivo `logo.png` são usados por padrão. Use os argumentos abaixo para caminhos diferentes:
+
+```bash
+linkedin-aws-post-generator --input screenshots --output out --logo minha-logo.png
 ```
 
 Use `--activity` para processar apenas uma atividade específica:
 
 ```bash
-linkedin-aws-post-generator \
-  --in_root screens \
-  --out_dir out \
-  --logo logo.png \
-  --activity "Nome da Atividade 1"
+linkedin-aws-post-generator --activity "Nome da Atividade 1"
 ```
 
-Para cada subpasta em `--in_root`, o comando gera:
+Para cada subpasta em `--input`, o comando gera:
 - Um PNG por página (`NomeDaAtividade_p01.png`, `_p02.png`…)
 - Um PDF único com todas as páginas (`NomeDaAtividade.pdf`)
 
@@ -89,6 +88,9 @@ Para cada subpasta em `--in_root`, o comando gera:
 
 | Opção | Padrão | Descrição |
 |---|---|---|
+| `--input` | `pages` | Pasta com as subpastas de atividades |
+| `--output` | `result` | Pasta onde os arquivos gerados são salvos |
+| `--logo` | `logo.png` | Caminho para o arquivo de logo |
 | `--activity` | *(todas)* | Processa apenas esta pasta de atividade (pode ser repetido) |
 | `--width` | `3240` | Largura do canvas em pixels |
 | `--height` | `4050` | Altura do canvas em pixels |

@@ -16,9 +16,12 @@ def main() -> None:
     ap = argparse.ArgumentParser(
         description="Generate LinkedIn carousel images from AWS activity screenshots."
     )
-    ap.add_argument("--in_root", required=True, help="Root folder with activity subfolders")
-    ap.add_argument("--out_dir", required=True, help="Output folder")
-    ap.add_argument("--logo", required=True, help="Path to logo PNG")
+    ap.add_argument("--input", default="pages", metavar="DIR",
+                    help="Folder with activity subfolders (default: pages)")
+    ap.add_argument("--output", default="result", metavar="DIR",
+                    help="Folder where PNGs and PDFs are saved (default: result)")
+    ap.add_argument("--logo", default="logo.png", metavar="FILE",
+                    help="Path to logo PNG (default: logo.png)")
 
     ap.add_argument("--activity", action="append", metavar="NAME",
                     help="Only process this activity folder (can be repeated)")
@@ -40,8 +43,8 @@ def main() -> None:
         ),
     )
 
-    in_root = Path(args.in_root)
-    out_dir = Path(args.out_dir)
+    in_root = Path(args.input)
+    out_dir = Path(args.output)
     logo = Path(args.logo)
 
     allowed = set(args.activity) if args.activity else None

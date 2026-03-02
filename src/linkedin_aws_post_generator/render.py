@@ -91,6 +91,141 @@ def _draw_framed_screenshot(canvas: Image.Image, slot: ScreenSlot,
     canvas.alpha_composite(sc, (x + pad, frame_y + pad))
 
 
+def _draw_isometric_cube(
+    layer: Image.Image,
+    cx: int, cy: int, s: int,
+    color: Tuple[int, int, int, int],
+    line_w: int,
+) -> None:
+    """Draw an isometric cube outline on a transparent layer."""
+    draw = ImageDraw.Draw(layer)
+    c = int(s * 0.866)  # cos 30°
+    h = s // 2          # sin 30°
+
+    pts = {
+        'T':  (cx,     cy),
+        'R':  (cx + c, cy + h),
+        'M':  (cx,     cy + s),
+        'L':  (cx - c, cy + h),
+        'BR': (cx + c, cy + h + s),
+        'B':  (cx,     cy + 2 * s),
+        'BL': (cx - c, cy + h + s),
+    }
+
+    fill = (*color[:3], 18)
+    draw.polygon([pts['T'], pts['R'], pts['M'], pts['L']], fill=fill)
+    draw.polygon([pts['R'], pts['BR'], pts['B'],  pts['M']], fill=fill)
+    draw.polygon([pts['L'], pts['M'], pts['B'],  pts['BL']], fill=fill)
+
+    edges = [
+        ('T', 'R'), ('R', 'M'), ('M', 'L'), ('L', 'T'),
+        ('R', 'BR'), ('BR', 'B'), ('B', 'M'),
+        ('L', 'BL'), ('BL', 'B'),
+    ]
+    for a, b in edges:
+        draw.line([pts[a], pts[b]], fill=color, width=line_w)
+
+
+def _draw_cube_decoration(canvas: Image.Image, cfg: RenderConfig) -> None:
+    """Draw floating isometric cubes on the right side of the canvas."""
+    W, H = cfg.canvas.width, cfg.canvas.height
+    layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    line_w = max(4, W // 810)
+
+    orange = cfg.style.aws_orange
+    white  = cfg.style.white
+
+    # (cx_frac, cy_frac, size_frac, base_color, alpha)
+    cubes = [
+        # top cluster
+        (0.84, 0.14, 0.100, orange, 230),
+        (0.98, 0.21, 0.095, white,  155),
+        (0.73, 0.22, 0.070, white,  135),
+        # mid-top cluster
+        (0.89, 0.31, 0.085, orange, 205),
+        (0.77, 0.38, 0.060, white,  125),
+        (0.94, 0.40, 0.075, orange, 180),
+        # mid cluster
+        (0.82, 0.50, 0.055, white,  120),
+        (0.91, 0.53, 0.065, orange, 160),
+        (0.72, 0.55, 0.045, white,  100),
+        # mid-bottom cluster
+        (0.87, 0.63, 0.070, orange, 150),
+        (0.78, 0.67, 0.050, white,  110),
+        (0.97, 0.68, 0.060, orange, 135),
+        # bottom cluster
+        (0.84, 0.77, 0.055, white,  100),
+        (0.92, 0.80, 0.065, orange, 130),
+    ]
+
+    for cx_f, cy_f, sz_f, base, alpha in cubes:
+        _draw_isometric_cube(
+            layer,
+            int(cx_f * W), int(cy_f * H), int(sz_f * W),
+            (*base[:3], alpha),
+            line_w,
+        )
+
+    canvas.alpha_composite(layer)
+
+
+def render_title_page(
+    logo: Path,
+    activity_title: str,
+    body_text: str,
+    out_path: Path,
+    cfg: RenderConfig,
+) -> Image.Image:
+    canvas = Image.new("RGBA", (cfg.canvas.width, cfg.canvas.height), cfg.style.bg)
+    _draw_header(canvas, logo, cfg)
+    _draw_title_line(canvas, activity_title, page_num=0, total_pages=0, cfg=cfg)
+    _draw_cube_decoration(canvas, cfg)
+
+    # Large bold text — left-aligned in left ~55% of content area, vertically centered
+    draw = ImageDraw.Draw(canvas)
+    W = cfg.canvas.width
+    margin = cfg.spacing.margin
+    font_size = int(W * 0.055)
+    font = load_font(font_size, bold=True)
+
+    text_max_w = int(W * 0.54) - margin
+    avail_h = cfg.canvas.height - cfg.spacing.content_top - cfg.spacing.bottom_margin
+
+    wrapped = _wrap_text(body_text, font, text_max_w, draw)
+    line_h = int(draw.textbbox((0, 0), "A", font=font)[3])
+    line_spacing = int(line_h * 0.35)
+    total_text_h = len(wrapped) * line_h + max(0, len(wrapped) - 1) * line_spacing
+
+    text_y = cfg.spacing.content_top + (int(avail_h * 0.60) - total_text_h) // 2
+    for line in wrapped:
+        draw.text((margin, text_y), line, font=font, fill=cfg.style.white)
+        text_y += line_h + line_spacing
+
+    rgb = canvas.convert("RGB")
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    rgb.save(out_path, "PNG", optimize=True)
+    return rgb
+
+
+def _wrap_text(text: str, font, max_w: int, draw: ImageDraw.ImageDraw) -> List[str]:
+    """Word-wrap text so each line fits within max_w pixels."""
+    words = text.split()
+    lines: List[str] = []
+    current = ""
+    for word in words:
+        candidate = f"{current} {word}".strip()
+        w = draw.textbbox((0, 0), candidate, font=font)[2]
+        if w <= max_w:
+            current = candidate
+        else:
+            if current:
+                lines.append(current)
+            current = word
+    if current:
+        lines.append(current)
+    return lines
+
+
 def render_page(
     logo: Path,
     activity_title: str,

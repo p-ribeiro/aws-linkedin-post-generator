@@ -19,13 +19,33 @@ Organize suas capturas de tela assim antes de rodar:
 ```
 screens/
 ├── Nome da Atividade 1/
+│   ├── 1.txt              ← (opcional) título do grupo 1
 │   ├── 1.1-descricao-da-tela.png
 │   ├── 1.2-outra-tela.png
+│   ├── 2.txt              ← (opcional) título do grupo 2
 │   └── 2.1-terceira-tela.png
 └── Nome da Atividade 2/
+    ├── 1.txt
     └── 1.1-tela.png
 out/          # PDFs e PNGs gerados aqui (criado automaticamente)
 logo.png      # Logo exibida no cabeçalho
+```
+
+### Página de título por grupo
+
+Cada grupo de imagens (`1.x`, `2.x`, `3.x`…) pode ter sua própria página de título. Basta criar um arquivo de texto com o número do grupo na pasta da atividade:
+
+| Arquivo | Aparece antes de |
+|---|---|
+| `1.txt` | todas as imagens `1.x` |
+| `2.txt` | todas as imagens `2.x` |
+| `3.txt` | todas as imagens `3.x` |
+
+O texto é centralizado na página e quebrado automaticamente para caber na largura. O arquivo é opcional — grupos sem `.txt` não geram página de título.
+
+Exemplo de `1.txt`:
+```
+Neste laboratório configuramos um bucket S3 com versionamento habilitado e testamos o ciclo de vida dos objetos.
 ```
 
 ### Convenção de nomes dos arquivos

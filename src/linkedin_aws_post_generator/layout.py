@@ -75,7 +75,7 @@ def measure_screenshot(img_path: Path, avail_w: int, cfg: RenderConfig) -> Scree
     )
 
 
-def _group_slots(slots: List[ScreenSlot]) -> List[List[ScreenSlot]]:
+def group_slots(slots: List[ScreenSlot]) -> List[List[ScreenSlot]]:
     groups: Dict[str, List[ScreenSlot]] = {}
     order: List[str] = []
     for slot in slots:
@@ -93,7 +93,7 @@ def paginate(slots: List[ScreenSlot], cfg: RenderConfig) -> List[List[ScreenSlot
     gap = cfg.spacing.gap_between_frames
     pages: List[List[ScreenSlot]] = []
 
-    for group in _group_slots(slots):
+    for group in group_slots(slots):
         current_page: List[ScreenSlot] = []
         used_h = 0
 

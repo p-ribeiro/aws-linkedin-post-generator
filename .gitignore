@@ -12,3 +12,4 @@ wheels/
 !logo.png
 *.pdf
 *.svg
+*.txt

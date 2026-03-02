@@ -1,9 +1,19 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
-name = "aws"
+name = "linkedin-aws-post-generator"
 version = "0.1.0"
-description = "Add your description here"
+description = "Generate LinkedIn carousel images from AWS activity screenshots"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.10"
 dependencies = [
-    "pillow>=12.1.1",
+    "pillow>=9.0.0",
 ]
+
+[project.scripts]
+linkedin-aws-post-generator = "linkedin_aws_post_generator.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/linkedin_aws_post_generator"]

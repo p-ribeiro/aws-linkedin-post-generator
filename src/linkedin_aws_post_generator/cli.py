@@ -9,7 +9,7 @@ from PIL import Image
 from .config import CanvasSpec, RenderConfig, SpacingSpec
 from .layout import group_slots, image_group_key, measure_screenshot, paginate
 from .render import render_page, render_title_page
-from .utils import iter_images, normalize_title
+from .utils import iter_images, normalize_title, _natural_key
 
 
 def main() -> None:
@@ -49,7 +49,7 @@ def main() -> None:
 
     allowed = set(args.activity) if args.activity else None
 
-    for act_dir in sorted(p for p in in_root.iterdir() if p.is_dir()):
+    for act_dir in sorted((p for p in in_root.iterdir() if p.is_dir()), key=_natural_key):
         if allowed and act_dir.name not in allowed:
             continue
         imgs = iter_images(act_dir)

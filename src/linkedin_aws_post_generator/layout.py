@@ -8,7 +8,7 @@ from typing import Dict, List
 from PIL import Image, ImageDraw
 
 from .config import RenderConfig
-from .utils import load_font
+from .utils import load_font, wrap_text, selective_upper
 
 
 @dataclass
@@ -16,6 +16,7 @@ class ScreenSlot:
     """A screenshot scaled to fit the available width, with its frame dimensions."""
     path: Path
     label: str
+    label_lines: List[str]
     scaled_w: int
     scaled_h: int
     frame_w: int
@@ -27,7 +28,13 @@ def image_label(path: Path) -> str:
     """Return a human-readable label from a filename like '1.2-bia-browser.png'."""
     stem = path.stem
     label = re.sub(r"^\d+\.\d+[-\s]*", "", stem)
-    return label.replace("-", " ").strip()
+    # Replace dashes with spaces only outside single-quoted sections
+    label = re.sub(
+        r"'[^']*'|[^']+",
+        lambda m: m.group() if m.group().startswith("'") else m.group().replace("-", " "),
+        label,
+    )
+    return label.strip()
 
 
 def image_group_key(path: Path) -> str:
@@ -47,8 +54,11 @@ def measure_screenshot(img_path: Path, avail_w: int, cfg: RenderConfig) -> Scree
 
     label = image_label(img_path)
     label_font = load_font(cfg.typo.label_font_size, bold=True)
-    tb = ImageDraw.Draw(Image.new("RGBA", (1, 1))).textbbox((0, 0), label.upper(), font=label_font)
-    label_h = tb[3] - tb[1]
+    label_lines = wrap_text(selective_upper(label), label_font, avail_w)
+    tb = ImageDraw.Draw(Image.new("RGBA", (1, 1))).textbbox((0, 0), "A", font=label_font)
+    line_h = tb[3] - tb[1]
+    line_spacing = int(line_h * 0.2)
+    label_h = line_h * len(label_lines) + line_spacing * max(0, len(label_lines) - 1)
 
     inner_w = avail_w - 2 * pad
     avail_h = cfg.canvas.height - cfg.spacing.content_top - cfg.spacing.bottom_margin
@@ -67,6 +77,7 @@ def measure_screenshot(img_path: Path, avail_w: int, cfg: RenderConfig) -> Scree
     return ScreenSlot(
         path=img_path,
         label=label,
+        label_lines=label_lines,
         scaled_w=scaled_w,
         scaled_h=scaled_h,
         frame_w=frame_w,

@@ -7,7 +7,7 @@ from PIL import Image, ImageDraw, ImageFilter
 
 from .config import RenderConfig
 from .layout import ScreenSlot
-from .utils import load_font
+from .utils import load_font, wrap_text
 
 
 def _add_shadow(canvas: Image.Image, box: Tuple[int, int, int, int], cfg: RenderConfig) -> None:
@@ -73,12 +73,16 @@ def _draw_framed_screenshot(canvas: Image.Image, slot: ScreenSlot,
                              x: int, y: int, cfg: RenderConfig) -> None:
     draw = ImageDraw.Draw(canvas)
     label_font = load_font(cfg.typo.label_font_size, bold=True)
-    label_text = slot.label.upper()
     pad = cfg.spacing.frame_padding
 
-    draw.text((x + pad, y), label_text, font=label_font, fill=cfg.style.title_color)
-    tb = draw.textbbox((0, 0), label_text, font=label_font)
-    label_h = tb[3] - tb[1]
+    tb = draw.textbbox((0, 0), "A", font=label_font)
+    line_h = tb[3] - tb[1]
+    line_spacing = int(line_h * 0.2)
+    cur_label_y = y
+    for line in slot.label_lines:
+        draw.text((x + pad, cur_label_y), line, font=label_font, fill=cfg.style.title_color)
+        cur_label_y += line_h + line_spacing
+    label_h = line_h * len(slot.label_lines) + line_spacing * max(0, len(slot.label_lines) - 1)
 
     frame_y = y + int(label_h) + cfg.typo.label_gap
     frame_box = (x, frame_y, x + slot.frame_w, frame_y + slot.frame_h)
@@ -191,7 +195,7 @@ def render_title_page(
     text_max_w = int(W * 0.54) - margin
     avail_h = cfg.canvas.height - cfg.spacing.content_top - cfg.spacing.bottom_margin
 
-    wrapped = _wrap_text(body_text, font, text_max_w, draw)
+    wrapped = wrap_text(body_text, font, text_max_w)
     line_h = int(draw.textbbox((0, 0), "A", font=font)[3])
     line_spacing = int(line_h * 0.35)
     total_text_h = len(wrapped) * line_h + max(0, len(wrapped) - 1) * line_spacing
@@ -206,24 +210,6 @@ def render_title_page(
     rgb.save(out_path, "PNG", optimize=True)
     return rgb
 
-
-def _wrap_text(text: str, font, max_w: int, draw: ImageDraw.ImageDraw) -> List[str]:
-    """Word-wrap text so each line fits within max_w pixels."""
-    words = text.split()
-    lines: List[str] = []
-    current = ""
-    for word in words:
-        candidate = f"{current} {word}".strip()
-        w = draw.textbbox((0, 0), candidate, font=font)[2]
-        if w <= max_w:
-            current = candidate
-        else:
-            if current:
-                lines.append(current)
-            current = word
-    if current:
-        lines.append(current)
-    return lines
 
 
 def render_page(

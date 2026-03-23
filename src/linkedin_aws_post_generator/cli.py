@@ -8,7 +8,7 @@ from PIL import Image
 
 from .config import CanvasSpec, RenderConfig, SpacingSpec
 from .layout import group_slots, image_group_key, measure_screenshot, paginate
-from .render import render_page, render_title_page
+from .render import render_cover_page, render_page, render_title_page
 from .utils import iter_images, normalize_title, _natural_key
 
 
@@ -62,6 +62,20 @@ def main() -> None:
 
         rendered: List[Image.Image] = []
         page_counter = 0
+
+        cover_file = act_dir / "0.txt"
+        if cover_file.exists():
+            cover_text = cover_file.read_text(encoding="utf-8").strip()
+            cover_out = out_dir / f"{act_dir.name}_p00.png"
+            img = render_cover_page(
+                logo=logo,
+                activity_title=title,
+                cover_text=cover_text,
+                out_path=cover_out,
+                cfg=cfg,
+            )
+            rendered.append(img)
+            print("Wrote", cover_out)
 
         for group in group_slots(all_slots):
             group_key = image_group_key(group[0].path)

@@ -19,6 +19,7 @@ Organize suas capturas de tela assim antes de rodar:
 ```
 pages/
 ├── Nome da Atividade 1/
+│   ├── 0.txt              ← (opcional) capa do PDF
 │   ├── 1.txt              ← (opcional) título do grupo 1
 │   ├── 1.1-descricao-da-tela.png
 │   ├── 1.2-outra-tela.png
@@ -29,6 +30,17 @@ pages/
     └── 1.1-tela.png
 result/       # PDFs e PNGs gerados aqui (criado automaticamente)
 logo.png      # Logo exibida no cabeçalho
+```
+
+### Página de capa
+
+Se existir um arquivo `0.txt` na pasta da atividade, ele é usado como **capa do PDF** — a primeira página do carrossel. O texto vira o título centralizado da capa.
+
+A capa usa a mesma paleta de cores das demais páginas, mas com um layout diferente: logo centralizada no topo, linha divisória laranja, título em destaque no centro e cubos isométricos nos quatro cantos.
+
+Exemplo de `0.txt`:
+```
+Implantando uma Aplicação Containerizada na AWS com ECS e Fargate
 ```
 
 ### Página de título por grupo
@@ -81,7 +93,7 @@ linkedin-aws-post-generator --activity "Nome da Atividade 1"
 ```
 
 Para cada subpasta em `--input`, o comando gera:
-- Um PNG por página (`NomeDaAtividade_p01.png`, `_p02.png`…)
+- Um PNG por página (`NomeDaAtividade_p00.png` para a capa, `_p01.png`, `_p02.png`… para as demais)
 - Um PDF único com todas as páginas (`NomeDaAtividade.pdf`)
 
 ### Opções avançadas
@@ -100,7 +112,8 @@ Para cada subpasta em `--input`, o comando gera:
 
 ## Como funciona
 
-1. **Agrupamento** — imagens com o mesmo prefixo numérico ficam juntas na mesma página.
-2. **Paginação** — se um grupo não cabe em uma página, o excedente vai para a próxima.
-3. **Escala** — cada imagem é redimensionada para preencher a largura disponível sem ultrapassar a altura da página.
-4. **Renderização** — cada página recebe cabeçalho com logo e badge "Desafio AWS", título da atividade e numeração quando há múltiplas páginas.
+1. **Capa** — se `0.txt` existir, a primeira página do PDF é uma capa com logo centralizada, linha laranja e título em destaque.
+2. **Agrupamento** — imagens com o mesmo prefixo numérico ficam juntas na mesma página.
+3. **Paginação** — se um grupo não cabe em uma página, o excedente vai para a próxima.
+4. **Escala** — cada imagem é redimensionada para preencher a largura disponível sem ultrapassar a altura da página.
+5. **Renderização** — cada página recebe cabeçalho com logo e badge, título da atividade e numeração quando há múltiplas páginas.

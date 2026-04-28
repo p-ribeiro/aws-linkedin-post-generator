@@ -101,11 +101,12 @@ def _draw_framed_screenshot(
 
     tb = draw.textbbox((0, 0), "A", font=label_font)
     line_h = tb[3] - tb[1]
-    line_spacing = int(line_h * 0.2)
+    line_spacing = int(line_h * 0.35)
     cur_label_y = y
+    label_x = cfg.spacing.margin
     for line in slot.label_lines:
         draw.text(
-            (x + pad, cur_label_y), line, font=label_font, fill=cfg.style.title_color
+            (label_x, cur_label_y), line, font=label_font, fill=cfg.style.title_color
         )
         cur_label_y += line_h + line_spacing
     label_h = line_h * len(slot.label_lines) + line_spacing * max(
@@ -397,7 +398,7 @@ def render_page(
     gap = cfg.spacing.gap_between_frames
     total_h = sum(s.total_h for s in slots) + gap * (len(slots) - 1)
     avail_h = cfg.canvas.height - cfg.spacing.content_top - cfg.spacing.bottom_margin
-    start_y = cfg.spacing.content_top + (avail_h - total_h) // 2
+    start_y = max(cfg.spacing.content_top, cfg.spacing.content_top + (avail_h - total_h) // 2)
 
     avail_w = cfg.canvas.width - 2 * cfg.spacing.margin
     cur_y = start_y

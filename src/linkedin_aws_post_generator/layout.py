@@ -57,7 +57,7 @@ def measure_screenshot(img_path: Path, avail_w: int, cfg: RenderConfig) -> Scree
     label_lines = wrap_text(selective_upper(label), label_font, avail_w)
     tb = ImageDraw.Draw(Image.new("RGBA", (1, 1))).textbbox((0, 0), "A", font=label_font)
     line_h = tb[3] - tb[1]
-    line_spacing = int(line_h * 0.2)
+    line_spacing = int(line_h * 0.35)
     label_h = line_h * len(label_lines) + line_spacing * max(0, len(label_lines) - 1)
 
     inner_w = avail_w - 2 * pad

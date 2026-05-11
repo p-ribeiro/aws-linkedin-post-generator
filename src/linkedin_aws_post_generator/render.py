@@ -101,7 +101,7 @@ def _draw_framed_screenshot(
 
     tb = draw.textbbox((0, 0), "A", font=label_font)
     line_h = tb[3] - tb[1]
-    line_spacing = int(line_h * 0.35)
+    line_spacing = int(line_h * 0.70)
     cur_label_y = y
     label_x = cfg.spacing.margin
     for line in slot.label_lines:
@@ -323,17 +323,6 @@ def render_cover_page(
         draw.text(((W - lw) // 2, text_y), line, font=font, fill=cfg.style.white)
         text_y += line_h + line_spacing
 
-    # --- Activity title at the bottom ---
-    title_font = load_font(cfg.typo.title_font_size, bold=True)
-    tb = draw.textbbox((0, 0), activity_title, font=title_font)
-    tw = tb[2] - tb[0]
-    draw.text(
-        ((W - tw) // 2, int(H * 0.88)),
-        activity_title,
-        font=title_font,
-        fill=cfg.style.title_color,
-    )
-
     # --- Cube decoration in corners ---
     _draw_cover_cube_decoration(canvas, cfg)
 
@@ -352,7 +341,6 @@ def render_title_page(
 ) -> Image.Image:
     canvas = Image.new("RGBA", (cfg.canvas.width, cfg.canvas.height), cfg.style.bg)
     _draw_header(canvas, logo, cfg)
-    _draw_title_line(canvas, activity_title, page_num=0, total_pages=0, cfg=cfg)
     _draw_cube_decoration(canvas, cfg)
 
     # Large bold text — left-aligned in left ~55% of content area, vertically centered
@@ -381,6 +369,103 @@ def render_title_page(
     return rgb
 
 
+def _parse_text_slide(text: str):
+    """Return (title, bullets, footer) parsed from a lettered slide text file."""
+    lines = text.splitlines()
+    title = ""
+    bullets = []
+    footer_parts = []
+    in_footer = False
+    for line in lines:
+        stripped = line.strip()
+        if not title:
+            if stripped:
+                title = stripped.rstrip(":")
+        elif stripped.startswith("- "):
+            bullets.append(stripped[2:])
+        elif not stripped and bullets:
+            in_footer = True
+        elif in_footer and stripped:
+            footer_parts.append(stripped)
+    return title, bullets, " ".join(footer_parts)
+
+
+def render_text_slide(
+    logo: Path,
+    activity_title: str,
+    text: str,
+    out_path: Path,
+    cfg: RenderConfig,
+) -> Image.Image:
+    """Render a PowerPoint-style text slide from a lettered .txt file (a.txt, b.txt …)."""
+    W, H = cfg.canvas.width, cfg.canvas.height
+    canvas = Image.new("RGBA", (W, H), cfg.style.bg)
+    _draw_header(canvas, logo, cfg)
+    _draw_cover_cube_decoration(canvas, cfg)
+
+    draw = ImageDraw.Draw(canvas)
+    margin = cfg.spacing.margin
+    avail_w = W - 2 * margin
+
+    title, bullets, footer = _parse_text_slide(text)
+
+    title_font = load_font(int(W * 0.055), bold=True)
+    bullet_font = load_font(int(W * 0.038), bold=False)
+    footer_font = load_font(int(W * 0.032), bold=False)
+
+    y = cfg.spacing.content_top + int(H * 0.04)
+
+    # --- Title ---
+    for line in wrap_text(title, title_font, avail_w):
+        draw.text((margin, y), line, font=title_font, fill=cfg.style.aws_orange)
+        tb = draw.textbbox((0, 0), line, font=title_font)
+        y += (tb[3] - tb[1]) + int((tb[3] - tb[1]) * 0.20)
+
+    # --- Orange accent bar ---
+    bar_h = max(6, H // 600)
+    bar_y = y + int(H * 0.012)
+    draw.rectangle(
+        [margin, bar_y, margin + int(avail_w * 0.30), bar_y + bar_h],
+        fill=cfg.style.aws_orange,
+    )
+    y = bar_y + bar_h + int(H * 0.05)
+
+    # --- Bullet points ---
+    bullet_sq = int(W * 0.014)
+    bullet_text_x = margin + bullet_sq + int(margin * 0.5)
+    bullet_text_w = W - bullet_text_x - margin
+    tb_b = draw.textbbox((0, 0), "A", font=bullet_font)
+    b_line_h = tb_b[3] - tb_b[1]
+    b_spacing = int(b_line_h * 0.28)
+    b_gap = int(b_line_h * 0.60)
+
+    for bullet in bullets:
+        wrapped = wrap_text(bullet, bullet_font, bullet_text_w)
+        sq_cy = y + b_line_h // 2
+        draw.rectangle(
+            [margin, sq_cy - bullet_sq // 2, margin + bullet_sq, sq_cy + bullet_sq // 2],
+            fill=cfg.style.aws_orange,
+        )
+        for line in wrapped:
+            draw.text((bullet_text_x, y), line, font=bullet_font, fill=cfg.style.title_color)
+            y += b_line_h + b_spacing
+        y += b_gap
+
+    # --- Footer note ---
+    if footer:
+        y += int(H * 0.025)
+        tb_f = draw.textbbox((0, 0), "A", font=footer_font)
+        f_line_h = tb_f[3] - tb_f[1]
+        for line in wrap_text(footer, footer_font, avail_w):
+            draw.text((margin, y), line, font=footer_font, fill=cfg.style.aws_orange)
+            y += f_line_h + int(f_line_h * 0.22)
+
+    rgb = canvas.convert("RGB")
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    rgb.save(out_path, "PNG", optimize=True)
+    return rgb
+
+
 def render_page(
     logo: Path,
     activity_title: str,
@@ -393,7 +478,6 @@ def render_page(
     canvas = Image.new("RGBA", (cfg.canvas.width, cfg.canvas.height), cfg.style.bg)
 
     _draw_header(canvas, logo, cfg)
-    _draw_title_line(canvas, activity_title, page_num, total_pages, cfg)
 
     gap = cfg.spacing.gap_between_frames
     total_h = sum(s.total_h for s in slots) + gap * (len(slots) - 1)

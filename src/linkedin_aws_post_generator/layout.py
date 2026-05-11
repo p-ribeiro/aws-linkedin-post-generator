@@ -8,7 +8,7 @@ from typing import Dict, List
 from PIL import Image, ImageDraw
 
 from .config import RenderConfig
-from .utils import load_font, wrap_text, selective_upper
+from .utils import load_font, wrap_text
 
 
 @dataclass
@@ -54,7 +54,7 @@ def measure_screenshot(img_path: Path, avail_w: int, cfg: RenderConfig) -> Scree
 
     label = image_label(img_path)
     label_font = load_font(cfg.typo.label_font_size, bold=True)
-    label_lines = wrap_text(selective_upper(label), label_font, avail_w)
+    label_lines = wrap_text(label, label_font, avail_w)
     tb = ImageDraw.Draw(Image.new("RGBA", (1, 1))).textbbox((0, 0), "A", font=label_font)
     line_h = tb[3] - tb[1]
     line_spacing = int(line_h * 0.35)

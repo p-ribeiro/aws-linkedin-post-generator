@@ -8,7 +8,7 @@ from PIL import Image
 
 from .config import CanvasSpec, RenderConfig, SpacingSpec
 from .layout import group_slots, image_group_key, measure_screenshot, paginate
-from .render import render_cover_page, render_page, render_title_page
+from .render import render_cover_page, render_page, render_text_slide, render_title_page
 from .utils import iter_images, normalize_title, _natural_key
 
 
@@ -110,6 +110,24 @@ def main() -> None:
                 )
                 rendered.append(img)
                 print("Wrote", out_dir / out_name)
+
+        letter_files = sorted(
+            (f for f in act_dir.iterdir() if f.name[:-4].isalpha() and f.suffix == ".txt" and len(f.stem) == 1),
+            key=lambda p: p.stem,
+        )
+        for lf in letter_files:
+            slide_text = lf.read_text(encoding="utf-8").strip()
+            page_counter += 1
+            slide_out = out_dir / f"{act_dir.name}_p{page_counter:02d}.png"
+            img = render_text_slide(
+                logo=logo,
+                activity_title=title,
+                text=slide_text,
+                out_path=slide_out,
+                cfg=cfg,
+            )
+            rendered.append(img)
+            print("Wrote", slide_out)
 
         pdf_path = out_dir / f"{act_dir.name}.pdf"
         rendered[0].save(pdf_path, "PDF", save_all=True, append_images=rendered[1:], resolution=300)

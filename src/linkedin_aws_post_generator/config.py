@@ -15,10 +15,10 @@ class SpacingSpec:
     margin: int = 144
     header_h: int = 360
     title_y: int = 405
-    content_top: int = 555       # top of first frame
+    content_top: int = 555  # top of first frame
     bottom_margin: int = 144
     gap_between_frames: int = 72  # vertical gap between stacked frames
-    frame_padding: int = 36       # padding inside each frame around the screenshot
+    frame_padding: int = 36  # padding inside each frame around the screenshot
 
 
 @dataclass(frozen=True)
@@ -47,7 +47,7 @@ class TypographySpec:
     title_font_size: int = 90
     page_font_size: int = 66
     label_font_size: int = 84
-    label_gap: int = 42           # space between label text and the frame below it
+    label_gap: int = 84  # space between label text and the frame below it
 
     badge_pad_x: int = 66
     badge_pad_y: int = 36
